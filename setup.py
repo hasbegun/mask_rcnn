@@ -34,17 +34,17 @@ except Exception:
 setup(
     name='mask-rcnn',
     version='2.1',
-    url='https://github.com/matterport/Mask_RCNN',
-    author='Matterport',
-    author_email='waleed.abdulla@gmail.com',
+    url='https://github.com/hasbegun/mask_rcnn',
+    author='Inho Choi',
+    author_email='hasbegun@gmail.com',
     license='MIT',
     description='Mask R-CNN for object detection and instance segmentation',
     packages=["mrcnn"],
     install_requires=install_reqs,
     include_package_data=True,
     python_requires='>=3.4',
-    long_description="""This is an implementation of Mask R-CNN on Python 3, Keras, and TensorFlow. 
-The model generates bounding boxes and segmentation masks for each instance of an object in the image. 
+    long_description="""This is an implementation of Mask R-CNN on Python 3, Keras, and TensorFlow.
+The model generates bounding boxes and segmentation masks for each instance of an object in the image.
 It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.""",
     classifiers=[
         "Development Status :: 5 - Production/Stable",

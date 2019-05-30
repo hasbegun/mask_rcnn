@@ -7,26 +7,29 @@ Usage:
 """
 
 import argparse
+import coils
+import cv2
+import numpy as np
 import logging
 import os
+import redis
+import time
+
 try:
     import cStringIO as StringIO
 except ImportError:
     # from io import StringIO
     from io import BytesIO
-import time
 
-import coils
-import cv2
-import numpy as np
-import redis
+# local imports
+from share_args import redis_args
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class VideoSource(object):
-    def __init__(self, cam_source, width=None, height=None):
+    def __init__(self, cam_source, redis_host, redis_port, width=None, height=None):
         self.__width = width
         self.__height = height
         self.__cur_sleep = 0.1
@@ -63,10 +66,12 @@ class VideoSource(object):
 
     def run(self):
         cur_try = 0
+        # Create video capture object, retrying 5 times.
         while cur_try < self.max_try:
             cur_try += 1
             cap = cv2.VideoCapture(self.cam_source)
             if cap.isOpened():
+                logging.info('Video source is opened: %s', self.cam_source)
                 break
             logging.error('Video source is not opened, sleeping %ss', self.cur_sleep)
             time.sleep(self.cur_sleep)
@@ -75,6 +80,7 @@ class VideoSource(object):
                 self.cur_sleep = min(self.cur_sleep, self.max_sleep)
                 continue
             self.cur_sleep = 0.1
+
         if self.width and self.height:
             cap.set(3, self.width)
             cap.set(4, self.height)
@@ -100,55 +106,6 @@ class VideoSource(object):
             text = '{:.2f}, {:.2f}, {:.2f} fps'.format(*self.__fps.tick())
             logger.info(text)
 
-
-# # Create video capture object, retrying until successful.
-# max_sleep = 5.0
-# cur_sleep = 0.1
-# while True:
-#     # cap = cv2.VideoCapture(-1)
-#     cap = cv2.VideoCapture('video.mp4')
-#     if cap.isOpened():
-#         break
-#     print('not opened, sleeping {}s'.format(cur_sleep))
-#     time.sleep(cur_sleep)
-#     if cur_sleep < max_sleep:
-#         cur_sleep *= 2
-#         cur_sleep = min(cur_sleep, max_sleep)
-#         continue
-#     cur_sleep = 0.1
-#
-# # Create client to the Redis store.
-# store = redis.Redis()
-#
-# # Set video dimensions, if given.
-# if width:
-#     cap.set(3, width)
-# if height:
-#     cap.set(4, height)
-#
-# # Monitor the framerate at 1s, 5s, 10s intervals.
-# fps = coils.RateTicker((1, 5, 10))
-#
-# Repeatedly capture current image,
-# encode, serialize and push to Redis database.
-# Then create unique ID, and push to database as well.
-# while True:
-#     hello, image = cap.read()
-#     if image is None:
-#         time.sleep(0.5)
-#         continue
-#     hello, image = cv2.imencode('.jpg', image)
-#     sio = StringIO.StringIO()
-#     np.save(sio, image)
-#     value = sio.getvalue()
-#     store.set('image', value)
-#     image_id = os.urandom(4)
-#     store.set('image_id', image_id)
-#
-#     # Print the framerate.
-#     text = '{:.2f}, {:.2f}, {:.2f} fps'.format(*fps.tick())
-#     print(text)
-
 def arg_parser():
     parser = argparse.ArgumentParser(description='Video input runs.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -159,9 +116,12 @@ def arg_parser():
                         help='Width of camera or video size')
     parser.add_argument('--height', default=None,
                         help='Height of camera or video size')
-
+    redis_args(parser)
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     args = arg_parser()
-    vs = VideoSource(args.source, args.width, args.height).run()
+    vs = VideoSource(args.source,
+                     args.redis_host, args.redis_port,
+                     args.width, args.height).run()

@@ -10,6 +10,6 @@ IPython[all]
 coils==1.0.9
 redis>=2.10.6
 tornado
-opencv-python
-numpy
-tensorflow>=1.3.0
+#opencv-python
+#numpy
+#tensorflow>=1.3.0

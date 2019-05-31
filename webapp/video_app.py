@@ -28,13 +28,20 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class VideoSource(object):
+class VideoApp(object):
     def __init__(self, cam_source, redis_host, redis_port, width=None, height=None):
+        super(VideoApp, self).__init__()
         self.__width = width
         self.__height = height
         self.__cur_sleep = 0.1
-        self.__store = redis.Redis()
         self.__cam_source = cam_source
+        self.__redis_host = redis_host
+        self.__redis_port = int(redis_port)
+
+        # redis connector.
+        # self.__store = redis.Redis(host=self.redis_host,
+        #                            port=self.redis_port)
+        self.__store = redis.Redis()
 
         # Monitor the framerate at 1s, 5s, 10s intervals.
         self.__fps = coils.RateTicker((1, 5, 10))
@@ -63,6 +70,12 @@ class VideoSource(object):
     @property
     def max_try(self):
         return 5
+    @property
+    def redis_host(self):
+        return self.__redis_host
+    @property
+    def redis_port(self):
+        return self.__redis_port
 
     def run(self):
         cur_try = 0

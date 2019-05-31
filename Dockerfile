@@ -67,6 +67,9 @@ RUN cd /opt && \
         .. && \
     make -j4 && make -j4 install
 
+# Clean up
+RUN rm -rf /opt/opencv-${OPENCV_VERSION} /opt/opencv_contrib-${OPENCV_VERSION}
+
 RUN apt-get update && \
     apt-get install -y libsm6 libxext6 libxrender-dev
 
@@ -74,10 +77,12 @@ WORKDIR /project
 ADD requirements-docker.txt requirements.txt
 RUN pip install -r requirements.txt
 ADD . .
+
+# redis will be taken care of by docker compose.
 RUN apt-get install -y \
-        redis-server
+    redis-server \
+    vim
 
-# Clean up
-RUN rm -rf /opt/opencv-${OPENCV_VERSION} /opt/opencv_contrib-${OPENCV_VERSION}
-
-CMD ["bin/bash"]
+#ENTRYPOINT ["/project/entrypoint.sh"]
+#CMD ["run"]
+CMD ["/bin/bash"]

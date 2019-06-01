@@ -23,15 +23,25 @@ except ImportError:
 
 # local imports
 from processor import Processor
-from share_args import redis_args
+from share_args import redis_args, mask_rcnn_model_args
+
+from mrcnn import model as modellib
+from mrcnn import utils, visualize
+from samples.coco import coco
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class InferenceConfig(coco.CocoConfig):
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+
+
 class VideoProcessor(Processor):
-    def __init__(self, cam_source, redis_host, redis_port, width=None, height=None):
+    def __init__(self, cam_source, redis_host, redis_port, model_name,
+                 width=None, height=None):
         super(VideoProcessor, self).__init__(redis_host, redis_port)
         self.__width = width
         self.__height = height
@@ -40,6 +50,47 @@ class VideoProcessor(Processor):
 
         # Monitor the framerate at 1s, 5s, 10s intervals.
         self.__fps = coils.RateTicker((1, 5, 10))
+
+        self.__mask_rcnn_model = model_name
+        root_dir = os.path.abspath('../')
+        model_dir = os.path.join(root_dir, 'logs')
+        coco_model_path = os.path.join(root_dir, self.mask_rcnn_model)
+        self.__download_coco_model(coco_model_path)
+
+        config = InferenceConfig()
+        config.display()
+
+        self.model = modellib.MaskRCNN(
+            mode='inference', model_dir=model_dir, config=config)
+        self.model.load_weights(coco_model_path, by_name=True)
+        self.class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
+                            'bus', 'train', 'truck', 'boat', 'traffic light',
+                            'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird',
+                            'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear',
+                            'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
+                            'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+                            'kite', 'baseball bat', 'baseball glove', 'skateboard',
+                            'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
+                            'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+                            'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
+                            'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed',
+                            'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
+                            'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
+                            'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
+                            'teddy bear', 'hair drier', 'toothbrush']
+
+    def __download_coco_model(self, model_path):
+        # download coco model
+        if not os.path.exists(model_path):
+            utils.download_trained_weights(model_path)
+
+    @property
+    def mask_rcnn_model(self):
+        return self.__mask_rcnn_model
+
+    @mask_rcnn_model.setter
+    def mask_rcnn_model(self, model):
+        self.__mask_rcnn_model = model
 
     @property
     def width(self):
@@ -102,6 +153,11 @@ class VideoProcessor(Processor):
             if image is None:
                 time.sleep(0.5)
                 continue
+
+            results = self.model.detect([image], verbose=1)
+            r = results[0]
+            img =
+
             ret, image = cv2.imencode('.jpg', image)
             # sio = StringIO() # python2
             sio = BytesIO()
@@ -127,6 +183,8 @@ def arg_parser():
     parser.add_argument('--height', default=None,
                         help='Height of camera or video size')
     redis_args(parser)
+    mask_rcnn_model_args(parser)
+
     return parser.parse_args()
 
 
@@ -134,4 +192,5 @@ if __name__ == '__main__':
     args = arg_parser()
     vs = VideoProcessor(args.source,
                         args.redis_host, args.redis_port,
+                        args.model_name,
                         args.width, args.height).run()

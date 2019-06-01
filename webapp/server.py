@@ -35,7 +35,7 @@ class IndexHandler(web.RequestHandler):
     def get(self):
         self.render(os.path.join('templates', 'index.html'))
 
-class UploadHandler(web.RequestHandler):
+class UploadFormHandler(web.RequestHandler):
     def get(self):
         self.render(os.path.join('templates', 'upload_form.html'))
 
@@ -125,7 +125,8 @@ def make_webapp():
     app = web.Application([
         (r'/', IndexHandler),
         (r'/ws', SocketHandler),
-        (r'/upload_image', UploadHandler),
+        (r'/uploadimage', UploadFormHandler),
+        (r'/upload', UploadHandler),
     ])
     return app
 
@@ -134,7 +135,7 @@ if __name__ == '__main__':
     args = arg_parser()
     globals().update(args.__dict__)
     print(args)
-    app = make_webapp(args)
+    app = make_webapp()
     app.listen(args.port)
     logger.info('Connect localhost: %s', args.port)
     ioloop.IOLoop.instance().start()

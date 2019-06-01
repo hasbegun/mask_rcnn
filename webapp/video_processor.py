@@ -9,6 +9,7 @@ Usage:
 import argparse
 import logging
 import os
+import sys
 import time
 
 import coils
@@ -25,6 +26,8 @@ except ImportError:
 from processor import Processor
 from share_args import redis_args, mask_rcnn_model_args
 
+
+sys.path.append('..')
 from mrcnn import model as modellib
 from mrcnn import utils, visualize
 from samples.coco import coco
@@ -156,7 +159,8 @@ class VideoProcessor(Processor):
 
             results = self.model.detect([image], verbose=1)
             r = results[0]
-            img =
+            image = visualize.final_result(image, r['rois'], r['masks'], r['class_ids'],
+                                           self.class_names, r['scores'])
 
             ret, image = cv2.imencode('.jpg', image)
             # sio = StringIO() # python2

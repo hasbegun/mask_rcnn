@@ -1,32 +1,31 @@
 # Dockerfile with tensorflow gpu support on python3, opencv3.3
-FROM tensorflow/tensorflow:1.8.0-py3
+FROM tensorflow/tensorflow:1.13.1-py3
 MAINTAINER Inho C. <hasbegun@gmail.com>
 
 # The code below is all based off the repos made by https://github.com/janza/
 # He makes great dockerfiles for opencv, I just used a different base as I need
 # tensorflow on a gpu.
 
-RUN apt-get update
-
-# Core linux dependencies. 
-RUN apt-get install -y \
-        build-essential \
-        cmake \
-        git \
-        wget \
-        unzip \
-        yasm \
-        pkg-config \
-        libswscale-dev \
-        libtbb2 \
-        libtbb-dev \
-        libjpeg-dev \
-        libpng-dev \
-        libtiff-dev \
-        libjasper-dev \
-        libavformat-dev \
-        libhdf5-dev \
-        libpq-dev
+# Core linux dependencies.
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    unzip \
+    yasm \
+    pkg-config \
+    libswscale-dev \
+    libtbb2 \
+    libtbb-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libjasper-dev \
+    libavformat-dev \
+    libhdf5-dev \
+    libpq-dev \
+    vim
 
 # Python dependencies
 RUN pip3 --no-cache-dir install \
@@ -73,15 +72,24 @@ RUN rm -rf /opt/opencv-${OPENCV_VERSION} /opt/opencv_contrib-${OPENCV_VERSION}
 RUN apt-get update && \
     apt-get install -y libsm6 libxext6 libxrender-dev
 
+
 WORKDIR /project
 ADD requirements-docker.txt requirements.txt
 RUN pip install -r requirements.txt
 ADD . .
+RUN python setup.py install
+
+# install coco
+RUN cd /opt && \
+    git clone https://github.com/waleedka/coco.git && \
+    cd coco/PythonAPI && \
+    python setup.py install && \
+    cd / && rm -rf /opt/coco
 
 # redis will be taken care of by docker compose.
-RUN apt-get install -y \
-    redis-server \
-    vim
+RUN apt-get update && \
+    apt-get install -y \
+    redis-server
 
 #ENTRYPOINT ["/project/entrypoint.sh"]
 #CMD ["run"]

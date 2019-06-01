@@ -7,13 +7,13 @@ Usage:
 """
 
 import argparse
+import logging
+import os
+import time
+
 import coils
 import cv2
 import numpy as np
-import logging
-import os
-import redis
-import time
 
 try:
     import cStringIO as StringIO
@@ -22,26 +22,21 @@ except ImportError:
     from io import BytesIO
 
 # local imports
+from processor import Processor
 from share_args import redis_args
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class VideoApp(object):
+
+class VideoProcessor(Processor):
     def __init__(self, cam_source, redis_host, redis_port, width=None, height=None):
-        super(VideoApp, self).__init__()
+        super(VideoProcessor, self).__init__(redis_host, redis_port)
         self.__width = width
         self.__height = height
         self.__cur_sleep = 0.1
         self.__cam_source = cam_source
-        self.__redis_host = redis_host
-        self.__redis_port = int(redis_port)
-
-        # redis connector.
-        # self.__store = redis.Redis(host=self.redis_host,
-        #                            port=self.redis_port)
-        self.__store = redis.Redis()
 
         # Monitor the framerate at 1s, 5s, 10s intervals.
         self.__fps = coils.RateTicker((1, 5, 10))
@@ -49,33 +44,34 @@ class VideoApp(object):
     @property
     def width(self):
         return self.__width
+
     @property
     def height(self):
         return self.__height
+
     @property
     def max_sleep(self):
         return 5.0
+
     @property
     def cur_sleep(self):
         return self.__cur_sleep
+
     @cur_sleep.setter
     def cur_sleep(self, t):
         self.__cur_sleep = t
+
     @property
     def cam_source(self):
         return self.__cam_source
+
     @cam_source.setter
     def cam_source(self, src):
         self.__cam_source = src
+
     @property
     def max_try(self):
         return 5
-    @property
-    def redis_host(self):
-        return self.__redis_host
-    @property
-    def redis_port(self):
-        return self.__redis_port
 
     def run(self):
         cur_try = 0
@@ -111,13 +107,14 @@ class VideoApp(object):
             sio = BytesIO()
             np.save(sio, image)
             value = sio.getvalue()
-            self.__store.set('image', value)
+            self._store.set('image', value)
             image_id = os.urandom(4)
-            self.__store.set('image_id', image_id)
+            self._store.set('image_id', image_id)
 
             # Print the framerate.
             text = '{:.2f}, {:.2f}, {:.2f} fps'.format(*self.__fps.tick())
             logger.info(text)
+
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='Video input runs.',
@@ -135,6 +132,6 @@ def arg_parser():
 
 if __name__ == '__main__':
     args = arg_parser()
-    vs = VideoSource(args.source,
-                     args.redis_host, args.redis_port,
-                     args.width, args.height).run()
+    vs = VideoProcessor(args.source,
+                        args.redis_host, args.redis_port,
+                        args.width, args.height).run()

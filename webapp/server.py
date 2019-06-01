@@ -8,6 +8,8 @@ import argparse
 import base64
 import logging
 import os
+import random
+import string
 import time
 
 import coils
@@ -33,35 +35,45 @@ class IndexHandler(web.RequestHandler):
     def get(self):
         self.render(os.path.join('templates', 'index.html'))
 
+class UploadHandler(web.RequestHandler):
+    def get(self):
+        self.render(os.path.join('templates', 'upload_form.html'))
+
+class UploadHandler(web.RequestHandler):
+    def post(self):
+        file1 = self.request.files['file1'][0]
+        original_fname = file1['filename']
+        extension = os.path.splitext(original_fname)[1]
+        fname = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(6))
+        final_filename= fname+extension
+        output_file = open("uploads/" + final_filename, 'w')
+        output_file.write(file1['body'])
+        self.finish("file" + final_filename + " is uploaded")
 
 class SocketHandler(websocket.WebSocketHandler):
     """ Handler for websocket queries. """
 
-    def initialize(self, config):
-        self.__redis_host = config.get('redis_host', 'redis')
-        self.__redis_port = int(config.get('redis_port', '6379'))
-
-
     def __init__(self, *args, **kwargs):
         """ Initialize the Redis store and frame rate monitor. """
         super(SocketHandler, self).__init__(*args, **kwargs)
-        # self._store = redis.Redis(host=self.redis_host, port=self.redis_port)
+        # self._store = redis.Redis(host=globals().get('redis_host'),
+        #                           port=globals().get('redis_port'))
         self._store = redis.Redis()
         self._fps = coils.RateTicker((1, 5, 10))
         self._prev_image_id = None
-        self.__max_fps = 100
+        self._max_fps = 100
 
     @property
     def max_fps(self):
-        return self.__max_fps
+        return self._max_fps
 
-    @property
-    def redis_host(self):
-        return self.__redis_host
+    def on_open(self):
+        # self._connection.add(self)
+        pass
 
-    @property
-    def redis_port(self):
-        return self.__redis_port
+    def on_close(self):
+        # self._connection.remove(self)
+        pass
 
     def on_message(self, message):
         """ Retrieve image ID from database until different from last ID,
@@ -98,21 +110,32 @@ def arg_parser():
     return parser.parse_args()
 
 
-def make_webapp(args):
-    config = {'redis_host': args.redis_host,
-              'redis_port': args.redis_port}
+def make_webapp():
+    """
+    Pass redis_host and redis_port args to tornado web app.
+    https://stackoverflow.com/questions/49627836/how-to-pass-arguments-to-tornados-websockethandler-class
+    This method doesn't really work.
+    According to the tornado websocket src, the websocket has positional args and need to be passed
+    before key-value args.
+    https://www.tornadoweb.org/en/stable/_modules/tornado/websocket.html
+
+    In order to fix it, make this args to be global. This works, not optimal.
+    :return: tornado app obj
+    """
     app = web.Application([
         (r'/', IndexHandler),
-        (r'/ws', SocketHandler, config),
+        (r'/ws', SocketHandler),
+        (r'/upload_image', UploadHandler),
     ])
     return app
 
 
 if __name__ == '__main__':
     args = arg_parser()
+    globals().update(args.__dict__)
+    print(args)
     app = make_webapp(args)
     app.listen(args.port)
     logger.info('Connect localhost: %s', args.port)
     ioloop.IOLoop.instance().start()
 
-    # https://stackoverflow.com/questions/49627836/how-to-pass-arguments-to-tornados-websockethandler-class

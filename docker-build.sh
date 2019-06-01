@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-docker build -t alphablocks/mask-rcnn:latest -f Dockerfile .
+docker build --force-rm -t alphablocks/mask-rcnn:latest -f Dockerfile .

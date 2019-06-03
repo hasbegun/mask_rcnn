@@ -64,11 +64,9 @@ class MaskRCNNDemo(object):
     def run(self):
         # load random image from the images dir.
         file_names = next(os.walk(self.IMAGE_DIR))[2]
-        # print('==>', file_names)
         image = skimage.io.imread(os.path.join(
             self.IMAGE_DIR, random.choice(file_names)))
 
-        # print('-->', image)
         t = time.time()
         results = self.model.detect([image], verbose=1)
         print('detect took: ', time.time()-t)

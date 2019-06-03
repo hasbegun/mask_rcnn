@@ -8,8 +8,6 @@ import argparse
 import base64
 import logging
 import os
-import random
-import string
 import time
 
 import coils
@@ -25,6 +23,7 @@ except ImportError:
 
 # local imports
 from share_args import redis_args
+from uploadhandler import UploadHandler
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -33,22 +32,18 @@ logger = logging.getLogger(__name__)
 
 class IndexHandler(web.RequestHandler):
     def get(self):
-        self.render(os.path.join('templates', 'index.html'))
+        self.render('index.html')
 
-class UploadFormHandler(web.RequestHandler):
+
+class UploadForm(web.RequestHandler):
     def get(self):
-        self.render(os.path.join('templates', 'upload_form.html'))
+        self.render("upload_form.html")
 
-class UploadHandler(web.RequestHandler):
-    def post(self):
-        file1 = self.request.files['file1'][0]
-        original_fname = file1['filename']
-        extension = os.path.splitext(original_fname)[1]
-        fname = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(6))
-        final_filename= fname+extension
-        output_file = open("uploads/" + final_filename, 'w')
-        output_file.write(file1['body'])
-        self.finish("file" + final_filename + " is uploaded")
+
+class VideoDisplayHandler(web.RequestHandler):
+    def get(self):
+        self.render('video_display.html')
+
 
 class SocketHandler(websocket.WebSocketHandler):
     """ Handler for websocket queries. """
@@ -124,10 +119,18 @@ def make_webapp():
     """
     app = web.Application([
         (r'/', IndexHandler),
+        (r'/videodisplay', VideoDisplayHandler),
         (r'/ws', SocketHandler),
-        (r'/uploadimage', UploadFormHandler),
-        (r'/upload', UploadHandler),
-    ])
+        (r'/uploadform', UploadForm),
+        (r'/upload', UploadHandler, dict(upload_path='./uploads',
+                                         naming_strategy=None))
+    ],
+        debug=True,
+        template_path=os.path.join(os.path.dirname(__file__), "templates"),
+        static_path=os.path.join(os.path.dirname(__file__), "static"),
+        xsrf_cookies=True,
+        cookie_secret="SOME_SECRET_GOES_HERE_MATE",
+    )
     return app
 
 
@@ -139,4 +142,3 @@ if __name__ == '__main__':
     app.listen(args.port)
     logger.info('Connect localhost: %s', args.port)
     ioloop.IOLoop.instance().start()
-

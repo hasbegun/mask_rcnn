@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+    <ul>
+        <li><a href="{% url 'detectron:file_upload' %}">Simple upload<a> </li>
+        <li><a href="{% url 'detectron:model_form_upload' %}">Model Form Upload</a></li>
+    </ul>
+
+    <p>Upload files:</p>
+    <ul>
+        {% for f in uploaded_files %}
+            <li>
+                <a href="{{ f.document.url }}">{{ f.document.name }}</a>
+                <small>(uploaded at: {{ f.uploaded_at }})</small>
+            </li>
+        {% endfor %}
+
+{% endblock %}

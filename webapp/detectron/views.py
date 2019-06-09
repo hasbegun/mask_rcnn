@@ -5,6 +5,13 @@ from .models import UploadFile
 from .forms import UploadFileForm, UploadFileModelForm
 
 import cv2
+import numpy as np
+import logging.config
+from multiprocessing.pool import ThreadPool
+from .detectron import Detectron
+
+logger = logging.getLogger(__name__)
+# logger = logging.config.dictConfig()
 
 
 def index(request):
@@ -20,18 +27,38 @@ def index(request):
 #             destination.write(chunk)
 
 
+def fs_store(file_name, file_content):
+    fs = FileSystemStorage()
+    filename = fs.save(file_name, file_content)
+    return fs.url(filename)
+
+
 def file_upload(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            upload_file = request.FILES['upload_file']
-            fs = FileSystemStorage()
-            filename = fs.save(upload_file.name, upload_file)
-            upload_file_url = fs.url(filename)
+            upload_file = request.FILES.get('upload_file')
+            # Need to fetch file content before FileSystemStroage.save() call
+            # after save(), it become InMemoryUploadedFile
+            # https://docs.djangoproject.com/en/2.2/_modules/django/core/files/uploadedfile/
+            file_content = upload_file.read()  # io.BytesIO obj.
+            # fs = FileSystemStorage()
+            # filename = fs.save(upload_file.name, upload_file)
+            # upload_file_url = fs.url(filename)
+
+            decoded_img = cv2.imdecode(np.fromstring(file_content, np.uint8),
+                                       cv2.IMREAD_UNCHANGED)
+            detectron = Detectron()
+
+            # store uploaded file on file system at MEDIA_ROOT
+            upload_file_url = fs_store(upload_file.name, upload_file)
 
             processed = None
 
             # # case 2: opencv
+            # fileinfo = self.request.files['filename'][0]
+            # filename = self.naming_strategy(fileinfo['filename'])
+
             # decoded_img = cv2.imdecode(numpy.fromstring(fileinfo['body'], numpy.uint8),
             #                 cv2.IMREAD_UNCHANGED)
             # # detect_info = MaskRCNNWraper().web_run(decoded_img)

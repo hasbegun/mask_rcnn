@@ -2,7 +2,7 @@
 from mrcnn import visualize
 from mrcnn import model as modellib
 from mrcnn import utils
-import coco
+from . import coco
 
 import os
 import random

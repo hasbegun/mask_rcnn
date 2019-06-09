@@ -11,7 +11,8 @@
 
   {% if upload_file_url %}
     <p>File uploaded at: <a href="{{ upload_file_url }}">{{ upload_file_url }}</a></p>
-    <img src="{{ upload_file_url }}"/>
+    <img src="{{ upload_file_url }}"/><br>
+    <img src="{{ processed_img }}"/>
   {% endif %}
 
   <p><a href="{% url 'detectron:index' %}">Return to home</a></p>

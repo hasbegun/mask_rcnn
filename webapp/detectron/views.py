@@ -26,9 +26,12 @@ def file_upload(request):
             fs = FileSystemStorage()
             filename = fs.save(upload_file.name, upload_file)
             upload_file_url = fs.url(filename)
+
+            processed = None
             return render(request, 'detectron/file_upload.html',
                           {'form': form,
-                           'upload_file_url': upload_file_url})
+                           'upload_file_url': upload_file_url,
+                           'processed': processed})
     else:
         form = UploadFileForm()
     return render(request, 'detectron/file_upload.html', {'form': form})

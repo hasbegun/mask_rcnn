@@ -23,7 +23,8 @@ class Detectron(object):
     def __init__(self):
         super(Detectron, self).__init__()
         # import Mask RCNN
-        ROOT_DIR = os.path.abspath('./')
+        ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # ROOT_DIR = os.path.abspath('./')
         sys.path.append(ROOT_DIR)
 
         # COCO config
@@ -33,7 +34,8 @@ class Detectron(object):
         MODEL_DIR = os.path.join(ROOT_DIR, 'logs')
 
         # local path
-        COCO_MODEL_PATH = os.path.join(ROOT_DIR, 'mask_rcnn_coco.h5')
+        COCO_MODEL_PATH = os.path.join(
+            ROOT_DIR, 'detectron', 'ml_models', 'mask_rcnn_coco.h5')
         # download coco model
         if not os.path.exists(COCO_MODEL_PATH):
             utils.download_trained_weights(COCO_MODEL_PATH)
@@ -75,6 +77,22 @@ class Detectron(object):
         r = results[0]
         visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
                                     self.class_names, r['scores'])
+
+    def web_run(self, image):
+        # load random image from the images dir.
+        # file_names = next(os.walk(self.IMAGE_DIR))[2]
+
+        # image = skimage.io.imread(os.path.join(
+        #     self.IMAGE_DIR, '2383514521_1fc8d7b0de_z_23c75db8-40e1-404d-bf77-502b133cb3ee.jpg'))
+        print(image)
+        t = time.time()
+        results = self.model.detect([image], verbose=1)
+        print('detect took: ', time.time() - t)
+
+        return results[0]
+        # r = results[0]
+        # visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
+        #                             self.class_names, r['scores'])
 
 
 if __name__ == '__main__':

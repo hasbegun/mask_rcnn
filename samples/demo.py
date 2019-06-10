@@ -63,17 +63,25 @@ class MaskRCNNDemo(object):
 
     def run(self):
         # load random image from the images dir.
-        file_names = next(os.walk(self.IMAGE_DIR))[2]
-        image = skimage.io.imread(os.path.join(
-            self.IMAGE_DIR, random.choice(file_names)))
+        # file_names = next(os.walk(self.IMAGE_DIR))[2]
+        # image = skimage.io.imread(os.path.join(
+        #     self.IMAGE_DIR, random.choice(file_names)))
 
+<<<<<<< Updated upstream
         t = time.time()
+=======
+        # one image example
+        image = skimage.io.imread(os.path.join(
+            self.IMAGE_DIR, 'IMG_0988.JPG'))
+
+>>>>>>> Stashed changes
         results = self.model.detect([image], verbose=1)
         print('detect took: ', time.time()-t)
 
         r = results[0]
-        visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
-                                    self.class_names, r['scores'])
+        print('r:', r)
+        # visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
+        #                             self.class_names, r['scores'])
 
 
 if __name__ == '__main__':

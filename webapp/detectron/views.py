@@ -9,6 +9,7 @@ import numpy as np
 import logging.config
 from multiprocessing.pool import ThreadPool
 from .detectron import Detectron
+import base64
 
 logger = logging.getLogger(__name__)
 # logger = logging.config.dictConfig()
@@ -48,12 +49,22 @@ def file_upload(request):
 
             decoded_img = cv2.imdecode(np.fromstring(file_content, np.uint8),
                                        cv2.IMREAD_UNCHANGED)
-            detectron = Detectron()
+            # result = Detectron().web_run(decoded_img)
 
             # store uploaded file on file system at MEDIA_ROOT
             upload_file_url = fs_store(upload_file.name, upload_file)
 
-            processed = None
+            # fs = FileSystemStorage()
+            # filename = fs.save(upload_file.name, upload_file)
+            # upload_file_url = fs.url(filename)
+
+            # form web display
+            b64_src = 'data:image/png;base64,'  # jpeg
+            detectron_img = b64_src + \
+                base64.b64encode(decoded_img).decode()
+
+            import pdb
+            pdb.set_trace()
 
             # # case 2: opencv
             # fileinfo = self.request.files['filename'][0]
@@ -74,7 +85,7 @@ def file_upload(request):
             return render(request, 'detectron/file_upload.html',
                           {'form': form,
                            'upload_file_url': upload_file_url,
-                           'processed': processed})
+                           'detectron_img': detectron_img})
     else:
         form = UploadFileForm()
     return render(request, 'detectron/file_upload.html', {'form': form})

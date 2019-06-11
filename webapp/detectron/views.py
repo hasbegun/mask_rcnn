@@ -10,7 +10,8 @@ import logging.config
 from multiprocessing.pool import ThreadPool
 from .detectron import Detectron
 import base64
-
+import io
+from PIL import Image
 logger = logging.getLogger(__name__)
 # logger = logging.config.dictConfig()
 
@@ -33,6 +34,23 @@ def fs_store(file_name, file_content):
     filename = fs.save(file_name, file_content)
     return fs.url(filename)
 
+def png_to_image(png):
+   """Convert a png binary string to a PIL Image."""
+   return Image.open(io.StringIO(png))
+
+
+def image_to_png(image):
+   """Convert a PIL Image to a png binary string."""
+   output = io.StringIO()
+   image.save(output, 'PNG')
+   return output.getvalue()
+
+def bytes_to_png(image):
+   """Convert a PIL Image to a png binary string."""
+   output = io.BytesIO()
+   image.save(output, 'PNG')
+   return output.getvalue()
+
 
 def file_upload(request):
     if request.method == 'POST':
@@ -47,9 +65,9 @@ def file_upload(request):
             # filename = fs.save(upload_file.name, upload_file)
             # upload_file_url = fs.url(filename)
 
-            decoded_img = cv2.imdecode(np.fromstring(file_content, np.uint8),
+            encoded_img = cv2.imdecode(np.fromstring(file_content, np.uint8),
                                        cv2.IMREAD_UNCHANGED)
-            # result = Detectron().web_run(decoded_img)
+            result, marked_img = Detectron().web_run(encoded_img, file_content)
 
             # store uploaded file on file system at MEDIA_ROOT
             upload_file_url = fs_store(upload_file.name, upload_file)
@@ -59,12 +77,40 @@ def file_upload(request):
             # upload_file_url = fs.url(filename)
 
             # form web display
-            b64_src = 'data:image/png;base64,'  # jpeg
+            b64_src = 'data:image/png;base64,'  # png
+            # b64_src = 'data:image/jpeg;charset=utf-8;base64,'  # jpg
+            # case 1 this works. but not desired.
             detectron_img = b64_src + \
-                base64.b64encode(decoded_img).decode()
+                base64.b64encode(file_content).decode()
 
-            import pdb
-            pdb.set_trace()
+            d = Image.fromarray(marked_img)
+            buf = io.BytesIO()
+            detectron_img2 = b64_src + \
+                base64.b64encode(bytes_to_png(d)).decode()
+
+
+            print('+' * 10)
+            print(detectron_img2)
+
+            # decoded = marked_img.tobytes()
+            # detectron_img2 = b64_src + \
+            #     base64.b64encode(decoded).decode()
+
+            # failed case
+            # detectron_img = b64_src + \
+            #     base64.b64encode(marked_img).decode()
+
+            # detectron_img = b64_src + \
+            #     base64.b64encode(marked_img).decodebytes()
+
+            # img = base64.b64decode(base64.b64encode(marked_img))
+            # img_as_txt = base64.b64encode(marked_img).decode()
+            #
+            # detectron_img = b64_src % img
+                # str(base64.decodebytes(img_as_txt))
+
+            # detectron_img = b64_src + \
+            #     base64.b64encode(img).decode()
 
             # # case 2: opencv
             # fileinfo = self.request.files['filename'][0]
@@ -81,11 +127,12 @@ def file_upload(request):
 
             # Thread(target=self.__save_uploaded_file, args=(filename, decoded_img)).start()
             # self.redirect('http://localhost:9000')
-
+            # import pdb;pdb.set_trace()
             return render(request, 'detectron/file_upload.html',
                           {'form': form,
                            'upload_file_url': upload_file_url,
-                           'detectron_img': detectron_img})
+                           'detectron_img': detectron_img,
+                           'detectron_img2': detectron_img2,})
     else:
         form = UploadFileForm()
     return render(request, 'detectron/file_upload.html', {'form': form})

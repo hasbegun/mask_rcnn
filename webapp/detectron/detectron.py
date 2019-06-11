@@ -12,7 +12,8 @@ import numpy as np
 import skimage.io
 import matplotlib.pyplot as plt
 import time
-
+import io
+from PIL import Image
 
 class InferenceConfig(coco.CocoConfig):
     GPU_COUNT = 1
@@ -78,23 +79,41 @@ class Detectron(object):
         visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
                                     self.class_names, r['scores'])
 
-    def web_run(self, image):
+    def web_run(self, image=None, ori=None):
         # load random image from the images dir.
         # file_names = next(os.walk(self.IMAGE_DIR))[2]
 
-        # image = skimage.io.imread(os.path.join(
-        #     self.IMAGE_DIR, '2383514521_1fc8d7b0de_z_23c75db8-40e1-404d-bf77-502b133cb3ee.jpg'))
-        print(image)
+        # image = skimage.io.imread('test_small.jpg')
         t = time.time()
         results = self.model.detect([image], verbose=1)
         print('detect took: ', time.time() - t)
 
-        return results[0]
-        # r = results[0]
-        # visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
-        #                             self.class_names, r['scores'])
+        # return results[0]
+        r = results[0]
+        marked_img = visualize.mark_instances(image, r['rois'], r['masks'], r['class_ids'],
+                                            self.class_names, r['scores'])
+        # import pdb; pdb.set_trace()
+        print('*' * 10)
+        print(ori)
+        print(type(ori))
+        print('*' * 10)
+        # print(image)
+        print('*' * 10)
+        # print(marked_img)
+
+        # import base64
+        # s = base64.b64encode(marked_img)
+        # print('*' * 10)
+        # print(marked_img)
+        # print('*' * 10)
+        # print(s)
+        # s = base64.b64encode(marked_img).decode()
+        # print(s)
+
+        return (r, marked_img)
 
 
 if __name__ == '__main__':
     dt = Detectron()
-    dt.run()
+    # dt.run()
+    dt.web_run()

@@ -53,7 +53,7 @@ def file_upload(request):
             file_content = upload_file.read()  # io.BytesIO obj.
             encoded_img = cv2.imdecode(np.fromstring(file_content, np.uint8),
                                        cv2.IMREAD_UNCHANGED)
-            result, marked_img = Detectron().web_run(encoded_img, file_content)
+            result, marked_img = Detectron().web_run(encoded_img)
 
             # store uploaded file on file system at MEDIA_ROOT
             upload_file_url = fs_store(upload_file.name, upload_file)

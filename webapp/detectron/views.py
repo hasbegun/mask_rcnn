@@ -4,15 +4,20 @@ from django.shortcuts import render, redirect
 from .models import UploadFile
 from .forms import UploadFileForm, UploadFileModelForm
 
-import cv2
-import numpy as np
-import logging.config
 from multiprocessing.pool import ThreadPool
+
+import numpy as np
 from .detectron import Detectron
 import base64
 import io
 from PIL import Image
-logger = logging.getLogger(__name__)
+try:
+    from .log import setup_custom_logger
+except (SyntaxError, ImportError):
+    from log import setup_custom_logger
+
+import logging
+logger = setup_custom_logger('views', logging.DEBUG)
 
 
 def index(request):
@@ -51,8 +56,8 @@ def file_upload(request):
             # after save(), it become InMemoryUploadedFile
             # https://docs.djangoproject.com/en/2.2/_modules/django/core/files/uploadedfile/
             file_content = upload_file.read()  # io.BytesIO obj.
-            encoded_img = cv2.imdecode(np.fromstring(file_content, np.uint8),
-                                       cv2.IMREAD_UNCHANGED)
+
+            encoded_img = np.array(Image.open(io.BytesIO(file_content)))
             result, marked_img = Detectron().web_run(encoded_img)
 
             # store uploaded file on file system at MEDIA_ROOT

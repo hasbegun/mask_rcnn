@@ -67,14 +67,11 @@ class MaskRCNNDemo(object):
         # image = skimage.io.imread(os.path.join(
         #     self.IMAGE_DIR, random.choice(file_names)))
 
-<<<<<<< Updated upstream
         t = time.time()
-=======
         # one image example
         image = skimage.io.imread(os.path.join(
             self.IMAGE_DIR, 'IMG_0988.JPG'))
 
->>>>>>> Stashed changes
         results = self.model.detect([image], verbose=1)
         print('detect took: ', time.time()-t)
 

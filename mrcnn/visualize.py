@@ -30,12 +30,12 @@ ROOT_DIR = os.path.abspath("../")
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
 
-try:
-    from .log import setup_custom_logger
-except (SyntaxError, ImportError):
-    from log import setup_custom_logger
+# try:
+#     from .log import setup_custom_logger
+# except (SyntaxError, ImportError):
+#     from log import setup_custom_logger
 
-logger = setup_custom_logger('detectron', logging.DEBUG)
+# logger = setup_custom_logger('detectron', logging.DEBUG)
 
 ############################################################
 #  Visualization
@@ -649,7 +649,7 @@ def mark_instances(image, boxes, masks, class_ids, class_names,
             continue
 
         if show_bbox:
-            logger.debug('BBox %s in color: %s', boxes[i], color)
+            # logger.debug('BBox %s in color: %s', boxes[i], color)
             masked_image = draw_box(masked_image, boxes[i], color)
 
         # y1, x1, y2, x2 = boxes[i]

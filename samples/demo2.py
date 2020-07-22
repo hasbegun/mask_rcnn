@@ -10,8 +10,13 @@ import sys
 import math
 import numpy as np
 import skimage.io
+import matplotlib
 import matplotlib.pyplot as plt
 import time
+
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw
 
 class InferenceConfig(coco.CocoConfig):
     GPU_COUNT = 1
@@ -65,20 +70,39 @@ class MaskRCNNDemo(object):
         t = time.time()
         # load random image from the images dir.
         file_names = next(os.walk(self.IMAGE_DIR))[2]
+        input_file = random.choice(file_names)
         image = skimage.io.imread(os.path.join(
-            self.IMAGE_DIR, random.choice(file_names)))
+            self.IMAGE_DIR, input_file))
 
-        # one image example
+        # one image example. for debug
         # image = skimage.io.imread(os.path.join(
-        #     self.IMAGE_DIR, 'IMG_0988.JPG'))
+        #     self.IMAGE_DIR, '8433365521_9252889f9a_z.jpg'))
+        # input_file ='demo'
 
         results = self.model.detect([image], verbose=1)
         print('detect took: ', time.time()-t)
 
         r = results[0]
-        print('r:', r)
-        visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
+        # print('r:', r)
+        # visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
+        #                             self.class_names, r['scores'])
+
+        res = visualize.mark_instances(image, r['rois'], r['masks'], r['class_ids'],
                                     self.class_names, r['scores'])
+        res_img = Image.fromarray(res, 'RGB')
+        res_draw = ImageDraw.Draw(res_img)
+        font = ImageFont.truetype("DejaVuSans.ttf", 12)
+        
+        # rois, class_ids, scores, masks
+        for i in range(len(r['rois'])):
+            # print('>>', i)
+            y1, x1, y2, x2 = r['rois'][i]
+            t = self.class_names[r['class_ids'][i]]
+            s = r['scores'][i]
+            print('box: %s obj: %s score: %s' %(r['rois'][i], t, s))
+            res_draw.text((x1, y1-15), '%s %s' % (t, s), (0, 0, 0), font=font)
+        res_img.save('%s_res.png' % '_'.join(input_file.split('.')[:-1]))
+        
 
 
 if __name__ == '__main__':

@@ -93,7 +93,7 @@ class MaskRCNNDemo(object):
         res_draw = ImageDraw.Draw(res_img)
         font = ImageFont.truetype("DejaVuSans.ttf", 12)
         output_file = '_'.join(input_file.split('.')[:-1])
-        print('Output: %s_res.png', output_file)
+        print('Output: %s_res.png' % output_file)
 
         # rois, class_ids, scores, masks
         for i in range(len(r['rois'])):

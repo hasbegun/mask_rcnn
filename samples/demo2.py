@@ -92,17 +92,18 @@ class MaskRCNNDemo(object):
         res_img = Image.fromarray(res, 'RGB')
         res_draw = ImageDraw.Draw(res_img)
         font = ImageFont.truetype("DejaVuSans.ttf", 12)
-        
+        output_file = '_'.join(input_file.split('.')[:-1])
+        print('Output: %s_res.png', output_file)
+
         # rois, class_ids, scores, masks
         for i in range(len(r['rois'])):
-            # print('>>', i)
             y1, x1, y2, x2 = r['rois'][i]
             t = self.class_names[r['class_ids'][i]]
             s = r['scores'][i]
             print('box: %s obj: %s score: %s' %(r['rois'][i], t, s))
             res_draw.text((x1, y1-15), '%s %s' % (t, s), (0, 0, 0), font=font)
-        res_img.save('%s_res.png' % '_'.join(input_file.split('.')[:-1]))
-        
+        res_img.save('%s_res.png' % output_file)
+
 
 
 if __name__ == '__main__':
